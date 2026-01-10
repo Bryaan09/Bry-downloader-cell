@@ -1,4 +1,4 @@
-name: Build APK Fix
+name: Build APK Final
 
 on:
   push:
@@ -11,13 +11,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 1. Configura Python 3.9 (Estável)
+      # 1. Configura Python 3.9 (O mais estável para Buildozer)
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.9'
 
-      # 2. Limpeza de Disco
+      # 2. Libera espaço em disco
       - name: Free Disk Space
         uses: jlumbroso/free-disk-space@main
         with:
@@ -28,7 +28,8 @@ jobs:
           large-packages: true
           swap-storage: true
 
-      # 3. Instala dependências do Sistema
+      # 3. Instala dependências do sistema
+      # CORREÇÃO REALIZADA: Removidos libgstreamer e plugins que travavam a instalação
       - name: Install System Dependencies
         run: |
           sudo apt-get update
@@ -36,7 +37,7 @@ jobs:
             python3-pip build-essential git python3-dev \
             ffmpeg libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
             libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev \
-            zlib1g-dev libgstreamer1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
+            zlib1g-dev \
             libsqlite3-dev sqlite3 bzip2 libbz2-dev libssl-dev openssl \
             libgdbm-dev libgdbm-compat-dev liblzma-dev libreadline-dev \
             libncursesw5-dev libffi-dev uuid-dev openjdk-17-jdk unzip \
@@ -49,23 +50,20 @@ jobs:
           pip install buildozer
           pip install "cython<3"
 
-      # 5. Compilação com Aceite de Licença Separado
+      # 5. Compila o APK (Com correção de licença)
       - name: Build APK
         run: |
           export BUILDOZER_WARN_ON_ROOT=0
           
-          # 1. Faz o Buildozer baixar o SDK (vai falhar na licença, mas baixa os arquivos)
+          # Tenta iniciar para baixar o SDK
           echo "y" | buildozer android debug || true
           
-          # 2. Aceita as licenças manualmente usando o sdkmanager oficial
+          # Garante o aceite das licenças
           echo "Aceitando licenças..."
-          yes | ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
           yes | ~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --licenses || true
           
-          # 3. Limpa builds anteriores quebrados
+          # Roda o build final
           buildozer android clean
-          
-          # 4. Roda o build final (Agora sem o 'yes |' para não dar broken pipe)
           buildozer android debug
 
       # 6. Upload do APK
