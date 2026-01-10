@@ -1,4 +1,4 @@
-name: Build APK
+name: Build APK Manual
 
 on:
   push:
@@ -9,13 +9,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      # 1. Baixa seu código
+      - uses: actions/checkout@v4
 
-      # 1. Libera espaço no servidor (evita erro de disco cheio)
+      # 2. Prepara o Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      # 3. Libera espaço (para não dar erro de disco cheio)
       - name: Free Disk Space
         uses: jlumbroso/free-disk-space@main
         with:
-          tool-cache: false
+          tool-cache: true
           android: true
           dotnet: true
           haskell: true
@@ -23,17 +30,35 @@ jobs:
           docker-images: true
           swap-storage: true
 
-      # 2. Roda o Buildozer
-      - name: Build with Buildozer
-        uses: ArtemSBulgakov/buildozer-action-v1@v1
-        id: buildozer
-        with:
-          command: buildozer android debug
-          buildozer_version: master
+      # 4. Instala as dependências do Linux (A parte que "conserta" tudo)
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3-pip build-essential git python3-dev \
+            ffmpeg libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
+            libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev \
+            zlib1g-dev libgstreamer1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
+            libsqlite3-dev sqlite3 bzip2 libbz2-dev libssl-dev openssl \
+            libgdbm-dev libgdbm-compat-dev liblzma-dev libreadline-dev \
+            libncursesw5-dev libffi-dev uuid-dev openjdk-17-jdk unzip
 
-      # 3. Disponibiliza o APK para download
-      - name: Upload artifacts
+      # 5. Instala o Buildozer e o Cython correto
+      - name: Install Buildozer
+        run: |
+          pip install --upgrade pip
+          pip install buildozer
+          pip install "cython<3"
+
+      # 6. Roda o comando de criar o APK
+      - name: Build APK
+        run: |
+          export BUILDOZER_WARN_ON_ROOT=0
+          buildozer android debug
+
+      # 7. Salva o APK para você baixar
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: package
-          path: ${{ steps.buildozer.outputs.filename }}
+          name: bry-download-pro
+          path: bin/*.apk
