@@ -18,7 +18,7 @@ jobs:
         with:
           python-version: '3.10'
 
-      # 3. Libera espaço (para não dar erro de disco cheio)
+      # 3. Libera espaço (Essencial para não travar)
       - name: Free Disk Space
         uses: jlumbroso/free-disk-space@main
         with:
@@ -30,7 +30,7 @@ jobs:
           docker-images: true
           swap-storage: true
 
-      # 4. Instala as dependências do Linux (A parte que "conserta" tudo)
+      # 4. Instala as dependências do Linux
       - name: Install System Dependencies
         run: |
           sudo apt-get update
@@ -43,18 +43,19 @@ jobs:
             libgdbm-dev libgdbm-compat-dev liblzma-dev libreadline-dev \
             libncursesw5-dev libffi-dev uuid-dev openjdk-17-jdk unzip
 
-      # 5. Instala o Buildozer e o Cython correto
+      # 5. Instala o Buildozer
       - name: Install Buildozer
         run: |
           pip install --upgrade pip
           pip install buildozer
           pip install "cython<3"
 
-      # 6. Roda o comando de criar o APK
+      # 6. Roda o comando de criar o APK (CORRIGIDO AQUI)
+      # O "yes |" serve para aceitar a licença automaticamente
       - name: Build APK
         run: |
           export BUILDOZER_WARN_ON_ROOT=0
-          buildozer android debug
+          yes | buildozer android debug
 
       # 7. Salva o APK para você baixar
       - name: Upload APK
