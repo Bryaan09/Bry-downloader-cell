@@ -5,7 +5,7 @@ package.domain = org.bry
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas
 version = 0.1
-requirements = python3,kivy,kivymd,yt-dlp,openssl,ffpyplayer
+requirements = python3,kivy==2.3.0,kivymd,yt-dlp,openssl,ffpyplayer
 orientation = portrait
 fullscreen = 0
 android.permissions = INTERNET,WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE,ACCESS_NETWORK_STATE
@@ -22,4 +22,5 @@ android.archs = arm64-v8a
 android.allow_backup = True
 [buildozer]
 log_level = 2
+
 warn_on_root = 1
