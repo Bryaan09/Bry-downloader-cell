@@ -6,20 +6,18 @@ on:
 
 jobs:
   build:
-    # AQUI ESTÁ A CORREÇÃO PRINCIPAL:
-    # Mudamos de 'ubuntu-latest' para 'ubuntu-22.04' para garantir compatibilidade
     runs-on: ubuntu-22.04
 
     steps:
       - uses: actions/checkout@v4
 
-      # 1. Configura Python 3.9 (Mais estável para o Buildozer)
+      # 1. Configura Python 3.9
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.9'
 
-      # 2. Libera espaço em disco
+      # 2. Libera espaço
       - name: Free Disk Space
         uses: jlumbroso/free-disk-space@main
         with:
@@ -31,7 +29,8 @@ jobs:
           swap-storage: true
 
       # 3. Instala dependências do sistema
-      # Adicionei 'libltdl-dev' e 'autoconf' que são essenciais para compilar bibliotecas
+      # CORREÇÃO: Removi 'libgstreamer' e plugins que estavam dando erro.
+      # Eles não são necessários para gerar o APK do Android neste caso.
       - name: Install System Dependencies
         run: |
           sudo apt-get update
@@ -39,7 +38,7 @@ jobs:
             python3-pip build-essential git python3-dev \
             ffmpeg libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
             libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev \
-            zlib1g-dev libgstreamer1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
+            zlib1g-dev \
             libsqlite3-dev sqlite3 bzip2 libbz2-dev libssl-dev openssl \
             libgdbm-dev libgdbm-compat-dev liblzma-dev libreadline-dev \
             libncursesw5-dev libffi-dev uuid-dev openjdk-17-jdk unzip \
@@ -53,15 +52,14 @@ jobs:
           pip install "cython<3"
 
       # 5. Compila o APK
-      # Usamos 'yes |' para aceitar licenças e o comando de fixação de licença manual
       - name: Build APK
         run: |
           export BUILDOZER_WARN_ON_ROOT=0
           
-          # Tenta iniciar para baixar o SDK
+          # Tenta iniciar para baixar o SDK (aceitando licença com echo "y")
           echo "y" | buildozer android debug || true
           
-          # Força bruta para aceitar licenças
+          # Força bruta para aceitar licenças do Android SDK
           echo "Aceitando licenças manualmente..."
           yes | $HOME/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --licenses || true
           
