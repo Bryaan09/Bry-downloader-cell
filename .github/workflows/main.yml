@@ -1,12 +1,12 @@
-name: Build APK Clean
+name: Build APK Final
 
 on:
   push:
     branches: [ "main", "master" ]
+  workflow_dispatch: # Permite rodar manualmente clicando num botão
 
 jobs:
   build:
-    # Usamos o 22.04 pois é o mais estável para Android atualmente
     runs-on: ubuntu-22.04
 
     steps:
@@ -18,19 +18,9 @@ jobs:
         with:
           python-version: '3.10'
 
-      # 2. Limpa espaço em disco (Obrigatório para não travar)
-      - name: Free Disk Space
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: true
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          swap-storage: true
-
-      # 3. Instala APENAS o necessário (Sem gstreamer, sem lixo)
-      - name: Install Dependencies
+      # 2. Instala dependências do sistema
+      # (Sem a etapa de 'Free Disk Space' que estava travando)
+      - name: Install System Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -42,32 +32,32 @@ jobs:
             libncursesw5-dev libffi-dev uuid-dev openjdk-17-jdk unzip \
             libltdl-dev autoconf libtool pkg-config
 
-      # 4. Instala Buildozer
+      # 3. Instala Buildozer
       - name: Install Buildozer
         run: |
           pip install --upgrade pip
           pip install buildozer
           pip install "cython<3"
 
-      # 5. Compila o APK (Aceite de licença manual + Build)
+      # 4. Compila o APK
       - name: Build APK
         run: |
           export BUILDOZER_WARN_ON_ROOT=0
           
-          # Tenta baixar o SDK (vai falhar na licença, normal)
+          # Tenta iniciar para baixar o SDK
           echo "y" | buildozer android debug || true
           
-          # Aceita as licenças manualmente
+          # Aceita as licenças manualmente (Garante que não trave)
           echo "Aceitando licenças..."
           yes | ~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --licenses || true
           
-          # Limpa tentativas sujas anteriores
+          # Limpa builds anteriores
           buildozer android clean
           
           # Roda o build final
           buildozer android debug
 
-      # 6. Salva o APK
+      # 5. Salva o APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
